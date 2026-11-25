@@ -1,13 +1,20 @@
-[package]
-name = "system-shell"
-version = "0.1.0"
-edition = "2024"
+# Cargo.toml は Rust プロジェクトの設定ファイルです。
+# プロジェクト名やバージョン、使用する外部ライブラリ（クレート）を書きます。
+# `cargo build` を実行すると、ここに書いたクレートが自動でダウンロードされます。
 
+[package]
+name = "system-shell"   # プロジェクト（＝実行ファイル）の名前
+version = "0.1.0"       # このプロジェクトのバージョン
+edition = "2024"        # 使用する Rust の言語仕様の世代（エディション）
+
+# 依存クレート一覧。`名前 = "バージョン"` の形式で書きます。
+# "1" と書くと「1.x.x の最新版」を使う、という意味になります。
+# features は、そのクレートの追加機能のうち使いたいものを有効化する指定です。
 [dependencies]
-axum = { version = "0.8", features = ["ws"] }
-tokio = { version = "1", features = ["full"] }
-futures-util = "0.3"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-portable-pty = "0.9"
-windows-service = "0.8"
+axum = { version = "0.8", features = ["ws"] }           # Web サーバーフレームワーク（ws = WebSocket 機能）
+tokio = { version = "1", features = ["full"] }          # 非同期処理のランタイム（full = 全機能）
+futures-util = "0.3"                                    # 非同期ストリーム操作の便利機能（split / send / next など）
+serde = { version = "1", features = ["derive"] }        # データ変換ライブラリ（derive = #[derive(Deserialize)] を使えるように）
+serde_json = "1"                                        # serde の JSON 対応
+portable-pty = "0.9"                                    # 疑似端末（PTY）の作成・操作
+windows-service = "0.8"                                 # Windows サービスとして動かすための機能
