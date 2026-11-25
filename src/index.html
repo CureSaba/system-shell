@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <title>Windows SYSTEM Web Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0c0c0c;
+            overflow: hidden;
+        }
+        #terminal {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="terminal"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script>
+    const term = new Terminal({
+        cursorBlink: true,
+        fontFamily: 'Consolas, "Courier New", monospace',
+        fontSize: 14,
+        theme: { background: '#0c0c0c' }
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+    fitAddon.fit();
+
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+        // 接続直後に初期ターミナルサイズを送信
+        sendResize();
+        term.focus();
+    };
+
+    // PTYからの出力をxtermに描画
+    ws.onmessage = (event) => {
+        if (event.data instanceof ArrayBuffer) {
+            term.write(new Uint8Array(event.data));
+        } else {
+            term.write(event.data);
+        }
+    };
+
+    ws.onclose = () => {
+        term.write('\r\n\x1b[31m[Connection Closed]\x1b[0m\r\n');
+    };
+
+    // ユーザーのキー入力をPTYへ送信
+    term.onData((data) => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'input', data }));
+        }
+    });
+
+    // ブラウザのリサイズに合わせてConPTY側のサイズも変更
+    function sendResize() {
+        fitAddon.fit();
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'resize',
+                cols: term.cols,
+                rows: term.rows
+            }));
+        }
+    }
+
+    window.addEventListener('resize', sendResize);
+</script>
+</body>
+</html>
